@@ -24,4 +24,4 @@
 
 6. In your VSCode (or other preffered) terminal, run `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
-7. Run `./up.ps1`. Wait a few seconds, both ends should start up and your browser should open `http://localhost:3000/`, showing you the application.
+7. Run `./scripts/up.ps1`. Wait a few seconds, both ends should start up and your browser should open `http://localhost:3000/`, showing you the application.
