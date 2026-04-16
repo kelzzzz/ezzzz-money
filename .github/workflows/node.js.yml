@@ -2,7 +2,9 @@
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
 name: Node.js CI
-
+defaults:
+  run:
+    working-directory: ./ezzzzmoney-frontend
 on:
   push:
     branches: [ "master" ]
@@ -26,8 +28,5 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-      working-directory: ./ezzzzmoney-frontend
     - run: npm run build --if-present
-      working-directory: ./ezzzzmoney-frontend
     - run: npm test
-      working-directory: ./ezzzzmoney-frontend
