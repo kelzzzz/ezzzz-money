@@ -11,6 +11,7 @@
     - Java 17 (Zulu): [Download here](https://www.azul.com/downloads/?version=java-17-lts&package=jdk#zulu)
         - Ensure that your `%JAVA_HOME%` environment variable is set to the directory of your Java 17 JDK
         - Ensure that your JDK is on your `%PATH%`
+        - If the above confuses you, refer to this [tutorial](https://mkyong.com/java/how-to-set-java_home-on-windows-10/)
     - Maven: 3.9.x [Download here](https://maven.apache.org/download.cgi?.)
     - Node: Version 25.x [Download here](https://nodejs.org/en/download)
 
