@@ -1,11 +1,11 @@
 ### Project Setup Guide
 ---
 1. Clone the project and checkout the `staging` branch for the latest in-dev code
-    - `git checkout -b staging`
+    - `git checkout staging`
 
 2. Create a branch for your work
     - Put your issue # number before your branch's name
-    - Ex. `git branch 8888my_branch_name`
+    - Ex. `git checkout -b 8888my_branch_name`
 
 3. Download dependencies:
     - Java 17 (Zulu): [Download here](https://www.azul.com/downloads/?version=java-17-lts&package=jdk#zulu)
