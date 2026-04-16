@@ -1,15 +1,28 @@
 import React from 'react';
 import logo from './logo.svg';
+import { helloWorldService } from './Api';
 import './App.css';
 
 function App() {
+  const [message, setMessage] = React.useState('');
+  
+  React.useEffect(() => {
+    helloWorldService.getHello()
+      .then(response => {
+        setMessage(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching hello message:', error);
+      });
+    }, []);
+    
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
+          Edit <code>src/App.tsx</code> and save to reload.</p>
+          <p>{message && <span>Message from backend: {message}</span>}</p>
         <a
           className="App-link"
           href="https://reactjs.org"
