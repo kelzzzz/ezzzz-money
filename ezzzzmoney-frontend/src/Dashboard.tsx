@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './Dashboard.css';
-import { expenseService } from './Api';
 
 interface Transaction {
   id: number;
@@ -18,6 +17,15 @@ interface BudgetCategory {
   color: string;
 }
 
+const MOCK_TRANSACTIONS: Transaction[] = [
+  { id: 1, description: 'Paycheck', amount: 2400, category: 'Income', date: 'May 1', type: 'income' },
+  { id: 2, description: 'Grocery Store', amount: 87.5, category: 'Groceries', date: 'May 1', type: 'expense' },
+  { id: 3, description: 'Netflix', amount: 15.99, category: 'Subscriptions', date: 'Apr 30', type: 'expense' },
+  { id: 4, description: 'Restaurant', amount: 42.0, category: 'Dining', date: 'Apr 29', type: 'expense' },
+  { id: 5, description: 'Freelance Payment', amount: 500, category: 'Income', date: 'Apr 28', type: 'income' },
+  { id: 6, description: 'Electric Bill', amount: 110, category: 'Utilities', date: 'Apr 28', type: 'expense' },
+];
+
 const BUDGET_CATEGORIES: BudgetCategory[] = [
   { name: 'Groceries', spent: 220, limit: 300, color: '#34d399' },
   { name: 'Dining', spent: 180, limit: 200, color: '#fbbf24' },
@@ -31,38 +39,10 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'records'>('overview');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [filterCategory, setFilterCategory] = useState<string>('All');
   const [newEntry, setNewEntry] = useState({ description: '', amount: '', category: '', type: 'expense' as 'income' | 'expense' });
-
-  const userId = localStorage.getItem('userId');
-
-  useEffect(() => {
-    if (userId) {
-      fetchExpenses();
-    }
-  }, [userId]);
-
-  const fetchExpenses = async () => {
-    try {
-      setLoading(true);
-      const response = await expenseService.getExpensesByUser(parseInt(userId!));
-      const expenses = response.data.map((exp: any) => ({
-        id: exp.id,
-        description: exp.description,
-        amount: exp.amount,
-        category: exp.category,
-        date: exp.date,
-        type: exp.type,
-      }));
-      setTransactions(expenses.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    } catch (error) {
-      console.error('Error fetching expenses:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const healthScore = 72;
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -79,37 +59,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     return '#34d399';
   };
 
-  const handleAddEntry = async (e: React.FormEvent) => {
+  const handleAddEntry = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEntry.description || !newEntry.amount || !userId) return;
-    
-    try {
-      const newExpense = {
-        description: newEntry.description,
-        amount: parseFloat(newEntry.amount),
-        category: newEntry.category || 'Other',
-        date: new Date().toISOString().split('T')[0],
-        type: newEntry.type,
-      };
-      
-      await expenseService.createExpense(parseInt(userId), newExpense);
-      setNewEntry({ description: '', amount: '', category: '', type: 'expense' });
-      setShowAddForm(false);
-      fetchExpenses(); // Refresh the list
-    } catch (error) {
-      console.error('Error creating expense:', error);
-    }
-  };
-
-  const handleDeleteExpense = async (expenseId: number) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
-      try {
-        await expenseService.deleteExpense(expenseId);
-        fetchExpenses(); // Refresh the list
-      } catch (error) {
-        console.error('Error deleting expense:', error);
-      }
-    }
+    if (!newEntry.description || !newEntry.amount) return;
+    const entry: Transaction = {
+      id: Date.now(),
+      description: newEntry.description,
+      amount: parseFloat(newEntry.amount),
+      category: newEntry.category || 'Other',
+      date: 'Today',
+      type: newEntry.type,
+    };
+    setTransactions([entry, ...transactions]);
+    setNewEntry({ description: '', amount: '', category: '', type: 'expense' });
+    setShowAddForm(false);
   };
 
   return (
@@ -151,7 +114,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         {activeTab === 'overview' && (
           <>
             <div className="dash-header">
-              <h2 className="dash-title">Welcome 👋</h2>
+              <h2 className="dash-title">Good morning 👋</h2>
               <p className="dash-subtitle">Here's your financial snapshot for May 2026</p>
             </div>
 
@@ -253,6 +216,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <button className="add-btn" onClick={() => setShowAddForm(!showAddForm)}>
                 + Add Entry
               </button>
+              <select
+  className="add-input"
+  value={filterCategory}
+  onChange={e => setFilterCategory(e.target.value)}
+  style={{ marginRight: '10px' }}
+>
+  <option value="All">All Categories</option>
+  {BUDGET_CATEGORIES.map(cat => (
+    <option key={cat.name} value={cat.name}>{cat.name}</option>
+  ))}
+  <option value="Other">Other</option>
+</select>
             </div>
 
             {showAddForm && (
@@ -294,17 +269,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </div>
                     <div className="add-field">
                       <label className="add-label">Category</label>
-                      <select
+                      <input
                         className="add-input"
+                        placeholder="e.g. Groceries"
                         value={newEntry.category}
                         onChange={e => setNewEntry({ ...newEntry, category: e.target.value })}
-                      >
-                        <option value="">Select a category</option>
-                        {BUDGET_CATEGORIES.map(cat => (
-                          <option key={cat.name} value={cat.name}>{cat.name}</option>
-                        ))}
-                        <option value="Other">Other</option>
-                      </select>
+                      />
                     </div>
                   </div>
                   <div className="add-form-actions">
@@ -322,9 +292,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   <span>Category</span>
                   <span>Date</span>
                   <span>Amount</span>
-                  <span>Action</span>
                 </div>
-                {transactions.map(t => (
+                {transactions.filter(t => filterCategory === 'All' || t.category === filterCategory).map(t => (
                   <div className="records-row" key={t.id}>
                     <span className="records-desc">{t.description}</span>
                     <span className="records-cat-badge">{t.category}</span>
@@ -332,13 +301,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     <span className={`records-amount ${t.type}`}>
                       {t.type === 'income' ? '+' : '−'}${t.amount.toFixed(2)}
                     </span>
-                    <button 
-                      className="records-delete-btn"
-                      onClick={() => handleDeleteExpense(t.id)}
-                      title="Delete expense"
-                    >
-                      🗑️
-                    </button>
                   </div>
                 ))}
               </div>
