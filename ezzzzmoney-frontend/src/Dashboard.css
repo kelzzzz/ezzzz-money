@@ -375,6 +375,11 @@
 
 .add-input:focus { border-color: #34d399; }
 
+.add-input option {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
 .add-form-actions {
   display: flex;
   gap: 10px;

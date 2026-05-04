@@ -18,15 +18,6 @@ interface BudgetCategory {
   color: string;
 }
 
-const MOCK_TRANSACTIONS: Transaction[] = [
-  { id: 1, description: 'Paycheck', amount: 2400, category: 'Income', date: 'May 1', type: 'income' },
-  { id: 2, description: 'Grocery Store', amount: 87.5, category: 'Groceries', date: 'May 1', type: 'expense' },
-  { id: 3, description: 'Netflix', amount: 15.99, category: 'Subscriptions', date: 'Apr 30', type: 'expense' },
-  { id: 4, description: 'Restaurant', amount: 42.0, category: 'Dining', date: 'Apr 29', type: 'expense' },
-  { id: 5, description: 'Freelance Payment', amount: 500, category: 'Income', date: 'Apr 28', type: 'income' },
-  { id: 6, description: 'Electric Bill', amount: 110, category: 'Utilities', date: 'Apr 28', type: 'expense' },
-];
-
 const BUDGET_CATEGORIES: BudgetCategory[] = [
   { name: 'Groceries', spent: 220, limit: 300, color: '#34d399' },
   { name: 'Dining', spent: 180, limit: 200, color: '#fbbf24' },
@@ -303,12 +294,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </div>
                     <div className="add-field">
                       <label className="add-label">Category</label>
-                      <input
+                      <select
                         className="add-input"
-                        placeholder="e.g. Groceries"
                         value={newEntry.category}
                         onChange={e => setNewEntry({ ...newEntry, category: e.target.value })}
-                      />
+                      >
+                        <option value="">Select a category</option>
+                        {BUDGET_CATEGORIES.map(cat => (
+                          <option key={cat.name} value={cat.name}>{cat.name}</option>
+                        ))}
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
                   </div>
                   <div className="add-form-actions">
