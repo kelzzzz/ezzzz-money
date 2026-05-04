@@ -635,9 +635,44 @@
   border-bottom: none;
 }
 
+.alert-setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .alert-setting-label {
   font-size: 14px;
   color: #d1d5db;
+}
+
+.alert-setting-sub {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.alert-threshold-input {
+  width: 48px;
+  background: #1f2937;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 2px 6px;
+  color: #f9fafb;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  outline: none;
+  text-align: center;
+}
+
+.alert-threshold-input:focus {
+  border-color: #34d399;
+}
+
+.alert-threshold-wide {
+  width: 68px;
 }
 
 /* Toggle switch */
