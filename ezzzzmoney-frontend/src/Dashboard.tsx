@@ -181,6 +181,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         });
     }
 
+
     if (alertSettings.lowBalanceAlerts && totalExpenses > totalIncome && totalIncome > 0) {
       generated.push({
         id: 'low-balance',
