@@ -22,13 +22,4 @@ public class EzzzzmoneySpringBackendApplication {
 		SpringApplication.run(EzzzzmoneySpringBackendApplication.class, args);
 	}
 
-	@Bean
-	public CommandLineRunner initTestData(UserRepository userRepository) {
-		return args -> {
-			// init test accounts
-			userRepository.save(new User("test@example.com", "password123"));
-			userRepository.save(new User("demo@example.com", "demo123"));
-		};
-	}
-
 }
