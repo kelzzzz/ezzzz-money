@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Login.css';
+import { authService } from './Api';
 
 interface LoginProps {
   onLogin: () => void;
@@ -8,11 +9,24 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // No API call needed - just navigate to dashboard
-    onLogin();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await authService.login(email, password);
+      if (response.status === 200) {
+        onLogin();
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,6 +50,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
 
@@ -49,16 +64,25 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
 
-          <button className="login-btn" type="submit">
-            Sign In
+          {error && <p style={{ color: 'red', marginBottom: '10px' }}>{error}</p>}
+
+          <button className="login-btn" type="submit" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <p className="login-signup">
           Don't have an account? <span className="login-link">Sign up</span>
+        </p>
+
+        <p style={{ marginTop: '20px', fontSize: '12px', color: '#888' }}>
+          Test credentials:<br />
+          Email: test@example.com | Password: password123<br />
+          Email: demo@example.com | Password: demo123
         </p>
       </div>
     </div>

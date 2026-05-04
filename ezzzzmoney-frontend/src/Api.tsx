@@ -12,4 +12,9 @@ export const helloWorldService = {
   getHello: () => api.get('/hello'),
 };
 
+export const authService = {
+  login: (email: string, password: string) => 
+    api.post('/api/auth/login', { email, password }),
+};
+
 export default api;
