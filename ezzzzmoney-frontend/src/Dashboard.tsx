@@ -217,17 +217,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 + Add Entry
               </button>
               <select
-  className="add-input"
-  value={filterCategory}
-  onChange={e => setFilterCategory(e.target.value)}
-  style={{ marginRight: '10px' }}
->
-  <option value="All">All Categories</option>
-  {BUDGET_CATEGORIES.map(cat => (
-    <option key={cat.name} value={cat.name}>{cat.name}</option>
-  ))}
-  <option value="Other">Other</option>
-</select>
+                className="add-input"
+                value={filterCategory}
+                onChange={e => setFilterCategory(e.target.value)}
+                style={{ marginRight: '10px' }}
+              >
+                <option value="All">All Categories</option>
+                {BUDGET_CATEGORIES.map(cat => (
+                  <option key={cat.name} value={cat.name}>{cat.name}</option>
+                ))}
+                <option value="Other">Other</option>
+              </select>
             </div>
 
             {showAddForm && (
@@ -269,12 +269,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </div>
                     <div className="add-field">
                       <label className="add-label">Category</label>
-                      <input
-                        className="add-input"
-                        placeholder="e.g. Groceries"
-                        value={newEntry.category}
-                        onChange={e => setNewEntry({ ...newEntry, category: e.target.value })}
-                      />
+                      {newEntry.type === 'income' ? (
+                        <input
+                          className="add-input"
+                          value="Income"
+                          disabled
+                          style={{ opacity: 0.5 }}
+                        />
+                      ) : (
+                        <select
+                          className="add-input"
+                          value={newEntry.category}
+                          onChange={e => setNewEntry({ ...newEntry, category: e.target.value })}
+                        >
+                          <option value="">Select a category</option>
+                          {BUDGET_CATEGORIES.map(cat => (
+                            <option key={cat.name} value={cat.name}>{cat.name}</option>
+                          ))}
+                          <option value="Other">Other</option>
+                        </select>
+                      )}
                     </div>
                   </div>
                   <div className="add-form-actions">
