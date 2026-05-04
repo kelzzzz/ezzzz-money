@@ -170,23 +170,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     );
                   })}
                 </div>
-              </div>
-
-              <div className="dash-card recent-card">
-                <h3 className="dash-card-title">Recent Transactions</h3>
-                <div className="recent-list">
-                  {transactions.slice(0, 5).map(t => (
-                    <div className="recent-item" key={t.id}>
-                      <div className="recent-info">
-                        <span className="recent-desc">{t.description}</span>
-                        <span className="recent-cat">{t.category} · {t.date}</span>
-                      </div>
-                      <span className={`recent-amount ${t.type}`}>
-                        {t.type === 'income' ? '+' : '−'}${t.amount.toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                
               </div>
 
               <div className="dash-card chart-card">
@@ -202,6 +186,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     <Bar dataKey="expenses" fill="#f87171" radius={[4, 4, 0, 0]} name="Expenses" />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+              <div className="dash-card recent-card">
+                <h3 className="dash-card-title">Recent Transactions</h3>
+                <div className="recent-list">
+                  {transactions.slice(0, 5).map(t => (
+                    <div className="recent-item" key={t.id}>
+                      <div className="recent-info">
+                        <span className="recent-desc">{t.description}</span>
+                        <span className="recent-cat">{t.category} · {t.date}</span>
+                      </div>
+                      <span className={`recent-amount ${t.type}`}>
+                        {t.type === 'income' ? '+' : '−'}${t.amount.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </>
