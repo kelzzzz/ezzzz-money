@@ -27,7 +27,7 @@ const MOCK_TRANSACTIONS: Transaction[] = [
   { id: 6, description: 'Electric Bill', amount: 110, category: 'Utilities', date: 'Apr 28', type: 'expense' },
 ];
 
-const BUDGET_CATEGORIES: BudgetCategory[] = [
+const DEFAULT_BUDGET_CATEGORIES: BudgetCategory[] = [
   { name: 'Groceries', spent: 220, limit: 300, color: '#34d399' },
   { name: 'Dining', spent: 180, limit: 200, color: '#fbbf24' },
   { name: 'Shopping', spent: 310, limit: 250, color: '#f87171' },
@@ -44,6 +44,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('All');
   const [newEntry, setNewEntry] = useState({ description: '', amount: '', category: '', type: 'expense' as 'income' | 'expense' });
+
+  // Budget state
+  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>(DEFAULT_BUDGET_CATEGORIES);
+  const [editingBudget, setEditingBudget] = useState<string | null>(null);
+  const [editLimitValue, setEditLimitValue] = useState<string>('');
+  const [showAddBudget, setShowAddBudget] = useState(false);
+  const [newBudget, setNewBudget] = useState({ name: '', limit: '' });
 
   const healthScore = 72;
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -82,6 +89,43 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     setTransactions([entry, ...transactions]);
     setNewEntry({ description: '', amount: '', category: '', type: 'expense' });
     setShowAddForm(false);
+  };
+
+  // Budget handlers
+  const handleEditBudget = (catName: string, currentLimit: number) => {
+    setEditingBudget(catName);
+    setEditLimitValue(String(currentLimit));
+  };
+
+  const handleSaveBudgetLimit = (catName: string) => {
+    const parsed = parseFloat(editLimitValue);
+    if (isNaN(parsed) || parsed <= 0) return;
+    setBudgetCategories(prev =>
+      prev.map(cat =>
+        cat.name === catName ? { ...cat, limit: parsed } : cat
+      )
+    );
+    setEditingBudget(null);
+    setEditLimitValue('');
+  };
+
+  const handleDeleteBudget = (catName: string) => {
+    setBudgetCategories(prev => prev.filter(cat => cat.name !== catName));
+  };
+
+  const handleAddBudgetCategory = () => {
+    if (!newBudget.name.trim() || !newBudget.limit) return;
+    const parsed = parseFloat(newBudget.limit);
+    if (isNaN(parsed) || parsed <= 0) return;
+    const newCat: BudgetCategory = {
+      name: newBudget.name.trim(),
+      spent: 0,
+      limit: parsed,
+      color: '#34d399',
+    };
+    setBudgetCategories(prev => [...prev, newCat]);
+    setNewBudget({ name: '', limit: '' });
+    setShowAddBudget(false);
   };
 
   return (
@@ -151,17 +195,66 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </div>
               </div>
 
+              {/* BUDGET TRACKER - updated with edit/add functionality */}
               <div className="dash-card budget-card">
-                <h3 className="dash-card-title">Budget Tracker</h3>
+                <div className="budget-header">
+                  <h3 className="dash-card-title" style={{ margin: 0 }}>Budget Tracker</h3>
+                  <button className="budget-add-btn" onClick={() => setShowAddBudget(!showAddBudget)}>+ Add</button>
+                </div>
+
+                {showAddBudget && (
+                  <div className="budget-add-form">
+                    <input
+                      className="budget-edit-input"
+                      placeholder="Category name"
+                      value={newBudget.name}
+                      onChange={e => setNewBudget({ ...newBudget, name: e.target.value })}
+                    />
+                    <input
+                      className="budget-edit-input"
+                      type="number"
+                      placeholder="Limit ($)"
+                      value={newBudget.limit}
+                      onChange={e => setNewBudget({ ...newBudget, limit: e.target.value })}
+                    />
+                    <div className="budget-edit-actions">
+                      <button className="budget-save-btn" onClick={handleAddBudgetCategory}>Add</button>
+                      <button className="budget-cancel-btn" onClick={() => { setShowAddBudget(false); setNewBudget({ name: '', limit: '' }); }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="budget-list">
-                  {BUDGET_CATEGORIES.map(cat => {
+                  {budgetCategories.map(cat => {
                     const pct = Math.min((cat.spent / cat.limit) * 100, 100);
                     const col = getBudgetColor(cat.spent, cat.limit);
+                    const isEditing = editingBudget === cat.name;
                     return (
                       <div className="budget-item" key={cat.name}>
                         <div className="budget-meta">
                           <span className="budget-name">{cat.name}</span>
-                          <span className="budget-amounts">${cat.spent} / ${cat.limit}</span>
+                          <div className="budget-actions">
+                            {isEditing ? (
+                              <div className="budget-edit-row">
+                                <span className="budget-spent-label">${cat.spent} / </span>
+                                <input
+                                  className="budget-edit-input small"
+                                  type="number"
+                                  value={editLimitValue}
+                                  onChange={e => setEditLimitValue(e.target.value)}
+                                  autoFocus
+                                />
+                                <button className="budget-save-btn" onClick={() => handleSaveBudgetLimit(cat.name)}>✓</button>
+                                <button className="budget-cancel-btn" onClick={() => setEditingBudget(null)}>✕</button>
+                              </div>
+                            ) : (
+                              <div className="budget-right">
+                                <span className="budget-amounts">${cat.spent} / ${cat.limit}</span>
+                                <button className="budget-icon-btn" onClick={() => handleEditBudget(cat.name, cat.limit)} title="Edit limit">✏️</button>
+                                <button className="budget-icon-btn delete" onClick={() => handleDeleteBudget(cat.name)} title="Delete">🗑️</button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div className="budget-bar-bg">
                           <div className="budget-bar-fill" style={{ width: `${pct}%`, background: col }} />
@@ -170,23 +263,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     );
                   })}
                 </div>
-                
               </div>
 
-              <div className="dash-card chart-card">
-                <h3 className="dash-card-title">Income vs Expenses</h3>
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={CHART_DATA} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                    <XAxis dataKey="month" stroke="#6b7280" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                    <YAxis stroke="#6b7280" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#f9fafb' }} />
-                    <Legend wrapperStyle={{ color: '#9ca3af', fontSize: 13 }} />
-                    <Bar dataKey="income" fill="#34d399" radius={[4, 4, 0, 0]} name="Income" />
-                    <Bar dataKey="expenses" fill="#f87171" radius={[4, 4, 0, 0]} name="Expenses" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
               <div className="dash-card recent-card">
                 <h3 className="dash-card-title">Recent Transactions</h3>
                 <div className="recent-list">
@@ -203,6 +281,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   ))}
                 </div>
               </div>
+
+              <div className="dash-card chart-card">
+                <h3 className="dash-card-title">Income vs Expenses</h3>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={CHART_DATA} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                    <XAxis dataKey="month" stroke="#6b7280" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                    <YAxis stroke="#6b7280" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                    <Tooltip contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#f9fafb' }} />
+                    <Legend wrapperStyle={{ color: '#9ca3af', fontSize: 13 }} />
+                    <Bar dataKey="income" fill="#34d399" radius={[4, 4, 0, 0]} name="Income" />
+                    <Bar dataKey="expenses" fill="#f87171" radius={[4, 4, 0, 0]} name="Expenses" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </>
         )}
@@ -216,7 +309,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               </div>
               <select className="add-input" value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ marginRight: '10px' }}>
                 <option value="All">All Categories</option>
-                {BUDGET_CATEGORIES.map(cat => (
+                {budgetCategories.map(cat => (
                   <option key={cat.name} value={cat.name}>{cat.name}</option>
                 ))}
                 <option value="Other">Other</option>
@@ -251,7 +344,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                       ) : (
                         <select className="add-input" value={newEntry.category} onChange={e => setNewEntry({ ...newEntry, category: e.target.value })}>
                           <option value="">Select a category</option>
-                          {BUDGET_CATEGORIES.map(cat => (
+                          {budgetCategories.map(cat => (
                             <option key={cat.name} value={cat.name}>{cat.name}</option>
                           ))}
                           <option value="Other">Other</option>
