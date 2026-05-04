@@ -412,7 +412,7 @@
 
 .records-thead {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr 80px;
   padding: 14px 24px;
   font-size: 12px;
   color: #6b7280;
@@ -423,7 +423,7 @@
 
 .records-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr 80px;
   padding: 14px 24px;
   align-items: center;
   border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -454,3 +454,22 @@
 
 .records-amount.income { color: #34d399; }
 .records-amount.expense { color: #f87171; }
+
+.records-delete-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.records-delete-btn:hover {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+}

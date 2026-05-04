@@ -4,7 +4,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.List;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "users")
@@ -17,7 +20,10 @@ public class User {
     private String email;
     private String password;
 
-    // Constructors
+    @OneToMany(mappedBy = "user")
+    @JsonManagedReference
+    private List<Expense> expenses;
+
     public User() {
     }
 
@@ -26,7 +32,6 @@ public class User {
         this.password = password;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -49,5 +54,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public List<Expense> getExpenses() {
+        return expenses;
+    }
+
+    public void setExpenses(List<Expense> expenses) {
+        this.expenses = expenses;
     }
 }

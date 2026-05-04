@@ -28,7 +28,6 @@ public class LoginController {
         }
     }
 
-    // Inner classes for request/response
     public static class LoginRequest {
         private String email;
         private String password;

@@ -20,6 +20,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     try {
       const response = await authService.login(email, password);
       if (response.status === 200) {
+        localStorage.setItem('userId', response.data.userId);
+        localStorage.setItem('userEmail', response.data.email);
         onLogin();
       }
     } catch (err: any) {
@@ -81,8 +83,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         <p style={{ marginTop: '20px', fontSize: '12px', color: '#888' }}>
           Test credentials:<br />
-          Email: test@example.com | Password: password123<br />
-          Email: demo@example.com | Password: demo123
+          Email: user1@example.com | Password: password123<br />
+          Email: user2@example.com | Password: password456
         </p>
       </div>
     </div>

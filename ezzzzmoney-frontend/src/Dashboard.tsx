@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
+import { expenseService } from './Api';
 
 interface Transaction {
   id: number;
@@ -39,9 +40,38 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'records'>('overview');
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [newEntry, setNewEntry] = useState({ description: '', amount: '', category: '', type: 'expense' as 'income' | 'expense' });
+
+  const userId = localStorage.getItem('userId');
+
+  useEffect(() => {
+    if (userId) {
+      fetchExpenses();
+    }
+  }, [userId]);
+
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      const response = await expenseService.getExpensesByUser(parseInt(userId!));
+      const expenses = response.data.map((exp: any) => ({
+        id: exp.id,
+        description: exp.description,
+        amount: exp.amount,
+        category: exp.category,
+        date: exp.date,
+        type: exp.type,
+      }));
+      setTransactions(expenses.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const healthScore = 72;
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -58,20 +88,37 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     return '#34d399';
   };
 
-  const handleAddEntry = (e: React.FormEvent) => {
+  const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEntry.description || !newEntry.amount) return;
-    const entry: Transaction = {
-      id: Date.now(),
-      description: newEntry.description,
-      amount: parseFloat(newEntry.amount),
-      category: newEntry.category || 'Other',
-      date: 'Today',
-      type: newEntry.type,
-    };
-    setTransactions([entry, ...transactions]);
-    setNewEntry({ description: '', amount: '', category: '', type: 'expense' });
-    setShowAddForm(false);
+    if (!newEntry.description || !newEntry.amount || !userId) return;
+    
+    try {
+      const newExpense = {
+        description: newEntry.description,
+        amount: parseFloat(newEntry.amount),
+        category: newEntry.category || 'Other',
+        date: new Date().toISOString().split('T')[0],
+        type: newEntry.type,
+      };
+      
+      await expenseService.createExpense(parseInt(userId), newExpense);
+      setNewEntry({ description: '', amount: '', category: '', type: 'expense' });
+      setShowAddForm(false);
+      fetchExpenses(); // Refresh the list
+    } catch (error) {
+      console.error('Error creating expense:', error);
+    }
+  };
+
+  const handleDeleteExpense = async (expenseId: number) => {
+    if (window.confirm('Are you sure you want to delete this expense?')) {
+      try {
+        await expenseService.deleteExpense(expenseId);
+        fetchExpenses(); // Refresh the list
+      } catch (error) {
+        console.error('Error deleting expense:', error);
+      }
+    }
   };
 
   return (
@@ -279,6 +326,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   <span>Category</span>
                   <span>Date</span>
                   <span>Amount</span>
+                  <span>Action</span>
                 </div>
                 {transactions.map(t => (
                   <div className="records-row" key={t.id}>
@@ -288,6 +336,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     <span className={`records-amount ${t.type}`}>
                       {t.type === 'income' ? '+' : '−'}${t.amount.toFixed(2)}
                     </span>
+                    <button 
+                      className="records-delete-btn"
+                      onClick={() => handleDeleteExpense(t.id)}
+                      title="Delete expense"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 ))}
               </div>
