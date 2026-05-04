@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Dashboard.css';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface Transaction {
   id: number;
@@ -52,6 +53,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const circumference = 2 * Math.PI * 54;
   const dashOffset = circumference - (healthScore / 100) * circumference;
 
+  const CHART_DATA = [
+    { month: 'Jan', income: 2400, expenses: 1200 },
+    { month: 'Feb', income: 2400, expenses: 1800 },
+    { month: 'Mar', income: 2900, expenses: 2100 },
+    { month: 'Apr', income: 2900, expenses: 1650 },
+    { month: 'May', income: totalIncome, expenses: totalExpenses },
+  ];
+
   const getBudgetColor = (spent: number, limit: number) => {
     const pct = spent / limit;
     if (pct >= 1) return '#f87171';
@@ -66,7 +75,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       id: Date.now(),
       description: newEntry.description,
       amount: parseFloat(newEntry.amount),
-      category: newEntry.category || 'Other',
+      category: newEntry.type === 'income' ? 'Income' : (newEntry.category || 'Other'),
       date: 'Today',
       type: newEntry.type,
     };
@@ -77,39 +86,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   return (
     <div className="dash-page">
-      {/* Sidebar */}
       <aside className="dash-sidebar">
         <div className="dash-logo">
           <span>💸</span>
           <span className="dash-logo-text">EzzzMoney</span>
         </div>
         <nav className="dash-nav">
-          <button
-            className={`dash-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
-          >
+          <button className={`dash-nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
             <span className="dash-nav-icon">📊</span> Overview
           </button>
-          <button
-            className={`dash-nav-item ${activeTab === 'records' ? 'active' : ''}`}
-            onClick={() => setActiveTab('records')}
-          >
+          <button className={`dash-nav-item ${activeTab === 'records' ? 'active' : ''}`} onClick={() => setActiveTab('records')}>
             <span className="dash-nav-icon">📋</span> Records
           </button>
-          <button className="dash-nav-item placeholder">
-            <span className="dash-nav-icon">📅</span> Bills
-          </button>
-          <button className="dash-nav-item placeholder">
-            <span className="dash-nav-icon">📈</span> Investments
-          </button>
-          <button className="dash-nav-item placeholder">
-            <span className="dash-nav-icon">🔔</span> Alerts
-          </button>
+          <button className="dash-nav-item placeholder"><span className="dash-nav-icon">📅</span> Bills</button>
+          <button className="dash-nav-item placeholder"><span className="dash-nav-icon">📈</span> Investments</button>
+          <button className="dash-nav-item placeholder"><span className="dash-nav-icon">🔔</span> Alerts</button>
         </nav>
         <button className="dash-logout" onClick={onLogout}>Sign Out</button>
       </aside>
 
-      {/* Main Content */}
       <main className="dash-main">
         {activeTab === 'overview' && (
           <>
@@ -119,20 +114,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             </div>
 
             <div className="dash-grid">
-              {/* Health Score */}
               <div className="dash-card score-card">
                 <h3 className="dash-card-title">Financial Health Score</h3>
                 <div className="score-ring-wrap">
                   <svg className="score-ring" viewBox="0 0 120 120">
                     <circle cx="60" cy="60" r="54" fill="none" stroke="#1f2937" strokeWidth="10" />
-                    <circle
-                      cx="60" cy="60" r="54" fill="none"
-                      stroke={scoreColor} strokeWidth="10"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={dashOffset}
-                      strokeLinecap="round"
-                      transform="rotate(-90 60 60)"
-                    />
+                    <circle cx="60" cy="60" r="54" fill="none" stroke={scoreColor} strokeWidth="10"
+                      strokeDasharray={circumference} strokeDashoffset={dashOffset}
+                      strokeLinecap="round" transform="rotate(-90 60 60)" />
                   </svg>
                   <div className="score-number" style={{ color: scoreColor }}>{healthScore}</div>
                 </div>
@@ -141,7 +130,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </p>
               </div>
 
-              {/* Cash Flow */}
               <div className="dash-card cashflow-card">
                 <h3 className="dash-card-title">Cash Flow — May</h3>
                 <div className="cashflow-row">
@@ -163,7 +151,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </div>
               </div>
 
-              {/* Budget */}
               <div className="dash-card budget-card">
                 <h3 className="dash-card-title">Budget Tracker</h3>
                 <div className="budget-list">
@@ -185,7 +172,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </div>
               </div>
 
-              {/* Recent Transactions */}
               <div className="dash-card recent-card">
                 <h3 className="dash-card-title">Recent Transactions</h3>
                 <div className="recent-list">
@@ -202,6 +188,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   ))}
                 </div>
               </div>
+
+              <div className="dash-card chart-card">
+                <h3 className="dash-card-title">Income vs Expenses</h3>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={CHART_DATA} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                    <XAxis dataKey="month" stroke="#6b7280" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                    <YAxis stroke="#6b7280" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                    <Tooltip contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#f9fafb' }} />
+                    <Legend wrapperStyle={{ color: '#9ca3af', fontSize: 13 }} />
+                    <Bar dataKey="income" fill="#34d399" radius={[4, 4, 0, 0]} name="Income" />
+                    <Bar dataKey="expenses" fill="#f87171" radius={[4, 4, 0, 0]} name="Expenses" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </>
         )}
@@ -213,21 +214,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 <h2 className="dash-title">Financial Records</h2>
                 <p className="dash-subtitle">Track your income and expenses</p>
               </div>
-              <button className="add-btn" onClick={() => setShowAddForm(!showAddForm)}>
-                + Add Entry
-              </button>
-              <select
-                className="add-input"
-                value={filterCategory}
-                onChange={e => setFilterCategory(e.target.value)}
-                style={{ marginRight: '10px' }}
-              >
+              <select className="add-input" value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ marginRight: '10px' }}>
                 <option value="All">All Categories</option>
                 {BUDGET_CATEGORIES.map(cat => (
                   <option key={cat.name} value={cat.name}>{cat.name}</option>
                 ))}
                 <option value="Other">Other</option>
               </select>
+              <button className="add-btn" onClick={() => setShowAddForm(!showAddForm)}>+ Add Entry</button>
             </div>
 
             {showAddForm && (
@@ -237,51 +231,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   <div className="add-form-row">
                     <div className="add-field">
                       <label className="add-label">Type</label>
-                      <select
-                        className="add-input"
-                        value={newEntry.type}
-                        onChange={e => setNewEntry({ ...newEntry, type: e.target.value as 'income' | 'expense' })}
-                      >
+                      <select className="add-input" value={newEntry.type} onChange={e => setNewEntry({ ...newEntry, type: e.target.value as 'income' | 'expense' })}>
                         <option value="expense">Expense</option>
                         <option value="income">Income</option>
                       </select>
                     </div>
                     <div className="add-field">
                       <label className="add-label">Description</label>
-                      <input
-                        className="add-input"
-                        placeholder="e.g. Grocery Store"
-                        value={newEntry.description}
-                        onChange={e => setNewEntry({ ...newEntry, description: e.target.value })}
-                        required
-                      />
+                      <input className="add-input" placeholder="e.g. Grocery Store" value={newEntry.description} onChange={e => setNewEntry({ ...newEntry, description: e.target.value })} required />
                     </div>
                     <div className="add-field">
                       <label className="add-label">Amount ($)</label>
-                      <input
-                        className="add-input"
-                        type="number"
-                        placeholder="0.00"
-                        value={newEntry.amount}
-                        onChange={e => setNewEntry({ ...newEntry, amount: e.target.value })}
-                        required
-                      />
+                      <input className="add-input" type="number" placeholder="0.00" value={newEntry.amount} onChange={e => setNewEntry({ ...newEntry, amount: e.target.value })} required />
                     </div>
                     <div className="add-field">
                       <label className="add-label">Category</label>
                       {newEntry.type === 'income' ? (
-                        <input
-                          className="add-input"
-                          value="Income"
-                          disabled
-                          style={{ opacity: 0.5 }}
-                        />
+                        <input className="add-input" value="Income" disabled style={{ opacity: 0.5 }} />
                       ) : (
-                        <select
-                          className="add-input"
-                          value={newEntry.category}
-                          onChange={e => setNewEntry({ ...newEntry, category: e.target.value })}
-                        >
+                        <select className="add-input" value={newEntry.category} onChange={e => setNewEntry({ ...newEntry, category: e.target.value })}>
                           <option value="">Select a category</option>
                           {BUDGET_CATEGORIES.map(cat => (
                             <option key={cat.name} value={cat.name}>{cat.name}</option>
