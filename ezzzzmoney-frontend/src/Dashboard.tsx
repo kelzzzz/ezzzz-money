@@ -151,7 +151,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         {activeTab === 'overview' && (
           <>
             <div className="dash-header">
-              <h2 className="dash-title">Good morning 👋</h2>
+              <h2 className="dash-title">Welcome 👋</h2>
               <p className="dash-subtitle">Here's your financial snapshot for May 2026</p>
             </div>
 
