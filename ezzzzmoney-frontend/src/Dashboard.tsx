@@ -45,7 +45,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [newEntry, setNewEntry] = useState({ description: '', amount: '', category: '', type: 'expense' as 'income' | 'expense' });
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
-  const [alertSettings, setAlertSettings] = useState({ budgetWarnings: true, lowBalanceAlerts: true });
+  const [alertSettings, setAlertSettings] = useState({
+    budgetWarnings: true,
+    budgetWarningPct: 80,
+    largeTransactionAlerts: true,
+    largeTransactionAmount: 500,
+    lowBalanceAlerts: true,
+  });
+  const [thresholdDraft, setThresholdDraft] = useState({
+    budgetWarningPct: '80',
+    largeTransactionAmount: '500',
+  });
 
   // Budget state
   const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>(DEFAULT_BUDGET_CATEGORIES);
@@ -149,7 +159,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             message: `${cat.name} budget exceeded by $${(cat.spent - cat.limit).toFixed(0)}`,
             timestamp: 'Now',
           });
-        } else if (pct >= 80) {
+        } else if (pct >= alertSettings.budgetWarningPct) {
           generated.push({
             id: `budget-warning-${cat.name}`,
             severity: 'warning',
@@ -158,6 +168,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           });
         }
       });
+    }
+
+    if (alertSettings.largeTransactionAlerts && alertSettings.largeTransactionAmount > 0) {
+      transactions
+        .filter(t => t.type === 'expense' && t.amount >= alertSettings.largeTransactionAmount)
+        .forEach(t => {
+          generated.push({
+            id: `large-txn-${t.id}`,
+            severity: 'warning',
+            message: `Large expense: ${t.description} — $${t.amount.toFixed(0)}`,
+            timestamp: formatRelativeTime(t.date),
+          });
+        });
     }
 
     if (alertSettings.lowBalanceAlerts && totalExpenses > totalIncome && totalIncome > 0) {
@@ -571,10 +594,33 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               </div>
 
               <div className="dash-card alerts-settings-card">
-                <h3 className="dash-card-title">Alert Settings</h3>
+                <h3 className="dash-card-title">Alert Thresholds</h3>
                 <div className="alerts-settings-list">
+
+                  {/* Budget warnings */}
                   <div className="alert-setting-row">
-                    <span className="alert-setting-label">Budget warnings</span>
+                    <div className="alert-setting-info">
+                      <span className="alert-setting-label">Budget warnings</span>
+                      {alertSettings.budgetWarnings && (
+                        <span className="alert-setting-sub">
+                          Warn at&nbsp;
+                          <input
+                            className="alert-threshold-input"
+                            type="number"
+                            min={1}
+                            max={99}
+                            value={thresholdDraft.budgetWarningPct}
+                            onChange={e => setThresholdDraft(d => ({ ...d, budgetWarningPct: e.target.value }))}
+                            onBlur={() => {
+                              const v = Math.min(99, Math.max(1, parseInt(thresholdDraft.budgetWarningPct) || 80));
+                              setThresholdDraft(d => ({ ...d, budgetWarningPct: String(v) }));
+                              setAlertSettings(s => ({ ...s, budgetWarningPct: v }));
+                            }}
+                          />
+                          % of limit
+                        </span>
+                      )}
+                    </div>
                     <button
                       className={`alert-toggle ${alertSettings.budgetWarnings ? 'on' : 'off'}`}
                       onClick={() => setAlertSettings(s => ({ ...s, budgetWarnings: !s.budgetWarnings }))}
@@ -583,8 +629,46 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                       <span className="alert-toggle-thumb" />
                     </button>
                   </div>
+
+                  {/* Large transaction */}
                   <div className="alert-setting-row">
-                    <span className="alert-setting-label">Low balance alerts</span>
+                    <div className="alert-setting-info">
+                      <span className="alert-setting-label">Large transaction alerts</span>
+                      {alertSettings.largeTransactionAlerts && (
+                        <span className="alert-setting-sub">
+                          Alert for expenses over&nbsp;$
+                          <input
+                            className="alert-threshold-input alert-threshold-wide"
+                            type="number"
+                            min={1}
+                            value={thresholdDraft.largeTransactionAmount}
+                            onChange={e => setThresholdDraft(d => ({ ...d, largeTransactionAmount: e.target.value }))}
+                            onBlur={() => {
+                              const v = Math.max(1, parseInt(thresholdDraft.largeTransactionAmount) || 500);
+                              setThresholdDraft(d => ({ ...d, largeTransactionAmount: String(v) }));
+                              setAlertSettings(s => ({ ...s, largeTransactionAmount: v }));
+                            }}
+                          />
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      className={`alert-toggle ${alertSettings.largeTransactionAlerts ? 'on' : 'off'}`}
+                      onClick={() => setAlertSettings(s => ({ ...s, largeTransactionAlerts: !s.largeTransactionAlerts }))}
+                      aria-pressed={alertSettings.largeTransactionAlerts}
+                    >
+                      <span className="alert-toggle-thumb" />
+                    </button>
+                  </div>
+
+                  {/* Low balance */}
+                  <div className="alert-setting-row">
+                    <div className="alert-setting-info">
+                      <span className="alert-setting-label">Low balance alerts</span>
+                      {alertSettings.lowBalanceAlerts && (
+                        <span className="alert-setting-sub">Fires when expenses exceed income</span>
+                      )}
+                    </div>
                     <button
                       className={`alert-toggle ${alertSettings.lowBalanceAlerts ? 'on' : 'off'}`}
                       onClick={() => setAlertSettings(s => ({ ...s, lowBalanceAlerts: !s.lowBalanceAlerts }))}
@@ -593,6 +677,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                       <span className="alert-toggle-thumb" />
                     </button>
                   </div>
+
                 </div>
               </div>
             </div>
