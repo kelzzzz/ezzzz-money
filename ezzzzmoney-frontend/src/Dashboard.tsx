@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './Dashboard.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { expenseService } from './Api';
+import { expenseService, billService } from './Api';
 
 interface Transaction {
   id: number;
@@ -26,6 +26,17 @@ const DEFAULT_BUDGET_CATEGORIES: BudgetCategory[] = [
   { name: 'Utilities', spent: 110, limit: 150, color: '#34d399' },
 ];
 
+interface Bill {
+  id: number;
+  name: string;
+  amount: number;
+  dueDate: string;
+  category: string;
+  paid: boolean;
+  recurring: boolean;
+  frequency: string;
+}
+
 interface AlertItem {
   id: string;
   severity: 'critical' | 'warning' | 'info';
@@ -38,7 +49,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'records' | 'alerts'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'records' | 'bills' | 'alerts'>('overview');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('All');
@@ -55,6 +66,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [thresholdDraft, setThresholdDraft] = useState({
     budgetWarningPct: '80',
     largeTransactionAmount: '500',
+  });
+
+  // Bills state
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [showAddBillForm, setShowAddBillForm] = useState(false);
+  const [newBill, setNewBill] = useState({
+    name: '', amount: '', category: 'Utilities', dueDate: '', recurring: false, frequency: 'monthly',
   });
 
   // Budget state
@@ -82,9 +100,72 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }
   };
 
+  const fetchBills = async () => {
+    try {
+      const response = await billService.getBillsByUser(parseInt(userId!));
+      setBills(response.data.sort((a: Bill, b: Bill) =>
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      ));
+    } catch (error) {
+      console.error('Error fetching bills:', error);
+    }
+  };
+
+  const getBillStatus = (bill: Bill): 'paid' | 'overdue' | 'due-soon' | 'upcoming' => {
+    if (bill.paid) return 'paid';
+    const due = new Date(bill.dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil((due.getTime() - today.getTime()) / 86400000);
+    if (diffDays < 0) return 'overdue';
+    if (diffDays <= 7) return 'due-soon';
+    return 'upcoming';
+  };
+
+  const handleAddBill = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBill.name || !newBill.amount || !newBill.dueDate || !userId) return;
+    try {
+      await billService.createBill(parseInt(userId), {
+        name: newBill.name,
+        amount: parseFloat(newBill.amount),
+        category: newBill.category,
+        dueDate: newBill.dueDate,
+        paid: false,
+        recurring: newBill.recurring,
+        frequency: newBill.recurring ? newBill.frequency : 'one-time',
+      });
+      setNewBill({ name: '', amount: '', category: 'Utilities', dueDate: '', recurring: false, frequency: 'monthly' });
+      setShowAddBillForm(false);
+      fetchBills();
+    } catch (error) {
+      console.error('Error creating bill:', error);
+    }
+  };
+
+  const handleMarkPaid = async (bill: Bill) => {
+    try {
+      await billService.updateBill(bill.id, { paid: true });
+      fetchBills();
+    } catch (error) {
+      console.error('Error marking bill paid:', error);
+    }
+  };
+
+  const handleDeleteBill = async (billId: number) => {
+    if (!window.confirm('Delete this bill?')) return;
+    try {
+      await billService.deleteBill(billId);
+      fetchBills();
+    } catch (error) {
+      console.error('Error deleting bill:', error);
+    }
+  };
+
   useEffect(() => {
     if (userId) {
       fetchExpenses();
+      fetchBills();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
@@ -191,6 +272,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       });
     }
 
+    bills.forEach(bill => {
+      const status = getBillStatus(bill);
+      if (status === 'overdue') {
+        generated.push({
+          id: `bill-overdue-${bill.id}`,
+          severity: 'critical',
+          message: `Overdue bill: ${bill.name} — $${bill.amount.toFixed(0)} was due ${bill.dueDate}`,
+          timestamp: 'Now',
+        });
+      } else if (status === 'due-soon') {
+        const due = new Date(bill.dueDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((due.getTime() - today.getTime()) / 86400000);
+        generated.push({
+          id: `bill-soon-${bill.id}`,
+          severity: 'warning',
+          message: `${bill.name} due in ${diffDays} day${diffDays !== 1 ? 's' : ''} — $${bill.amount.toFixed(0)}`,
+          timestamp: 'Now',
+        });
+      }
+    });
+
     transactions
       .filter(t => t.type === 'income')
       .slice(0, 3)
@@ -204,7 +308,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       });
 
     return generated.filter(a => !dismissedAlerts.has(a.id));
-  }, [transactions, alertSettings, dismissedAlerts, totalIncome, totalExpenses, budgetCategories]);
+  }, [transactions, alertSettings, dismissedAlerts, totalIncome, totalExpenses, budgetCategories, bills]);
 
   const newAlertCount = alerts.filter(a => a.severity !== 'info').length;
 
@@ -296,7 +400,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           <button className={`dash-nav-item ${activeTab === 'records' ? 'active' : ''}`} onClick={() => setActiveTab('records')}>
             <span className="dash-nav-icon">📋</span> Records
           </button>
-          <button className="dash-nav-item placeholder">
+          <button
+            className={`dash-nav-item ${activeTab === 'bills' ? 'active' : ''}`}
+            onClick={() => setActiveTab('bills')}
+          >
             <span className="dash-nav-icon">📅</span> Bills
           </button>
           <button className="dash-nav-item placeholder">
@@ -553,6 +660,201 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             </div>
           </>
         )}
+
+        {activeTab === 'bills' && (() => {
+          const overdueBills = bills.filter(b => getBillStatus(b) === 'overdue');
+          const dueSoonBills = bills.filter(b => getBillStatus(b) === 'due-soon');
+          const upcomingBills = bills.filter(b => getBillStatus(b) === 'upcoming');
+          const paidBills = bills.filter(b => getBillStatus(b) === 'paid');
+          const totalUnpaid = bills
+            .filter(b => !b.paid)
+            .reduce((s, b) => s + b.amount, 0);
+
+          const statusLabel: Record<string, string> = {
+            paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due Soon', upcoming: 'Upcoming',
+          };
+
+          const BILL_CATEGORIES = ['Rent', 'Utilities', 'Subscriptions', 'Insurance', 'Health', 'Transportation', 'Other'];
+
+          return (
+            <>
+              <div className="dash-header records-header">
+                <div>
+                  <h2 className="dash-title">Bills 📅</h2>
+                  <p className="dash-subtitle">Track and manage your recurring bills</p>
+                </div>
+                <button className="add-btn" onClick={() => setShowAddBillForm(v => !v)}>
+                  + Add Bill
+                </button>
+              </div>
+
+              {/* Summary row */}
+              <div className="bills-summary">
+                <div className="bills-stat">
+                  <span className="bills-stat-value overdue">{overdueBills.length}</span>
+                  <span className="bills-stat-label">Overdue</span>
+                </div>
+                <div className="bills-stat">
+                  <span className="bills-stat-value due-soon">{dueSoonBills.length}</span>
+                  <span className="bills-stat-label">Due Soon</span>
+                </div>
+                <div className="bills-stat">
+                  <span className="bills-stat-value upcoming">{upcomingBills.length}</span>
+                  <span className="bills-stat-label">Upcoming</span>
+                </div>
+                <div className="bills-stat">
+                  <span className="bills-stat-value paid">{paidBills.length}</span>
+                  <span className="bills-stat-label">Paid</span>
+                </div>
+                <div className="bills-stat bills-stat-total">
+                  <span className="bills-stat-value unpaid-amount">${totalUnpaid.toFixed(0)}</span>
+                  <span className="bills-stat-label">Total Unpaid</span>
+                </div>
+              </div>
+
+              {/* Add Bill form */}
+              {showAddBillForm && (
+                <div className="dash-card add-form-card">
+                  <h3 className="dash-card-title">New Bill</h3>
+                  <form onSubmit={handleAddBill}>
+                    <div className="add-form-row">
+                      <div className="add-field">
+                        <label className="add-label">Name</label>
+                        <input
+                          className="add-input"
+                          placeholder="e.g. Netflix"
+                          value={newBill.name}
+                          onChange={e => setNewBill(b => ({ ...b, name: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div className="add-field">
+                        <label className="add-label">Amount ($)</label>
+                        <input
+                          className="add-input"
+                          type="number"
+                          placeholder="0.00"
+                          value={newBill.amount}
+                          onChange={e => setNewBill(b => ({ ...b, amount: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div className="add-field">
+                        <label className="add-label">Category</label>
+                        <select
+                          className="add-input"
+                          value={newBill.category}
+                          onChange={e => setNewBill(b => ({ ...b, category: e.target.value }))}
+                        >
+                          {BILL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                      <div className="add-field">
+                        <label className="add-label">Due Date</label>
+                        <input
+                          className="add-input"
+                          type="date"
+                          value={newBill.dueDate}
+                          onChange={e => setNewBill(b => ({ ...b, dueDate: e.target.value }))}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="add-form-row bills-form-row-2">
+                      <div className="add-field bills-recurring-field">
+                        <label className="add-label">Recurring</label>
+                        <button
+                          type="button"
+                          className={`alert-toggle ${newBill.recurring ? 'on' : 'off'}`}
+                          onClick={() => setNewBill(b => ({ ...b, recurring: !b.recurring }))}
+                        >
+                          <span className="alert-toggle-thumb" />
+                        </button>
+                      </div>
+                      {newBill.recurring && (
+                        <div className="add-field">
+                          <label className="add-label">Frequency</label>
+                          <select
+                            className="add-input"
+                            value={newBill.frequency}
+                            onChange={e => setNewBill(b => ({ ...b, frequency: e.target.value }))}
+                          >
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                    <div className="add-form-actions">
+                      <button type="submit" className="add-submit-btn">Save Bill</button>
+                      <button type="button" className="add-cancel-btn" onClick={() => setShowAddBillForm(false)}>Cancel</button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Bills list */}
+              <div className="dash-card records-card">
+                <div className="records-table">
+                  <div className="records-thead bills-thead">
+                    <span>Bill</span>
+                    <span>Category</span>
+                    <span>Due Date</span>
+                    <span>Amount</span>
+                    <span>Status</span>
+                    <span>Actions</span>
+                  </div>
+                  {bills.length === 0 && (
+                    <div className="alerts-empty">
+                      <span className="alerts-empty-icon">📭</span>
+                      <p>No bills yet</p>
+                      <span className="alerts-empty-sub">Click "+ Add Bill" to track your first bill</span>
+                    </div>
+                  )}
+                  {bills.map(bill => {
+                    const status = getBillStatus(bill);
+                    return (
+                      <div className="records-row bills-row" key={bill.id}>
+                        <div className="bill-name-cell">
+                          <span className="records-desc">{bill.name}</span>
+                          {bill.recurring && (
+                            <span className="bill-recurring-badge">↻ {bill.frequency}</span>
+                          )}
+                        </div>
+                        <span className="records-cat-badge">{bill.category}</span>
+                        <span className="records-date">{bill.dueDate}</span>
+                        <span className="records-amount expense">${bill.amount.toFixed(2)}</span>
+                        <span className={`bill-status-pill bill-status-${status}`}>
+                          {statusLabel[status]}
+                        </span>
+                        <div className="bill-actions">
+                          {!bill.paid && (
+                            <button
+                              className="bill-pay-btn"
+                              onClick={() => handleMarkPaid(bill)}
+                              title="Mark as paid"
+                            >
+                              ✓
+                            </button>
+                          )}
+                          <button
+                            className="records-delete-btn"
+                            onClick={() => handleDeleteBill(bill.id)}
+                            title="Delete bill"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          );
+        })()}
+
         {activeTab === 'alerts' && (
           <>
             <div className="dash-header">

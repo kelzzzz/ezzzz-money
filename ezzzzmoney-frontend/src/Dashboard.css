@@ -491,6 +491,116 @@
   font-family: 'Syne', sans-serif;
 }
 
+/* Bills tab */
+.bills-summary {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.bills-stat {
+  background: #111827;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.bills-stat-total {
+  grid-column: span 1;
+  border-color: rgba(52, 211, 153, 0.2);
+}
+
+.bills-stat-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.bills-stat-value.overdue      { color: #f87171; }
+.bills-stat-value.due-soon     { color: #fbbf24; }
+.bills-stat-value.upcoming     { color: #9ca3af; }
+.bills-stat-value.paid         { color: #34d399; }
+.bills-stat-value.unpaid-amount { color: #f0fdf4; font-size: 22px; }
+
+.bills-stat-label {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bills-thead {
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 100px !important;
+}
+
+.bills-row {
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 100px !important;
+}
+
+.bill-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bill-recurring-badge {
+  font-size: 11px;
+  color: #34d399;
+  opacity: 0.8;
+}
+
+.bill-status-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 99px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.bill-status-paid     { background: rgba(52,211,153,0.12); color: #34d399; }
+.bill-status-overdue  { background: rgba(248,113,113,0.12); color: #f87171; }
+.bill-status-due-soon { background: rgba(251,191,36,0.12);  color: #fbbf24; }
+.bill-status-upcoming { background: rgba(255,255,255,0.06); color: #9ca3af; }
+
+.bill-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.bill-pay-btn {
+  background: rgba(52,211,153,0.12);
+  border: 1px solid rgba(52,211,153,0.3);
+  color: #34d399;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.bill-pay-btn:hover {
+  background: rgba(52,211,153,0.25);
+}
+
+.bills-form-row-2 {
+  grid-template-columns: auto auto 1fr 1fr !important;
+}
+
+.bills-recurring-field {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 12px;
+}
+
 /* Alerts tab layout */
 .alerts-layout {
   display: flex;

@@ -95,3 +95,19 @@ INSERT INTO expenses (user_id, description, amount, category, date, type) VALUES
 INSERT INTO expenses (user_id, description, amount, category, date, type) VALUES (2, 'Grocery Store', 138.50, 'Groceries', '2026-05-02', 'expense');
 INSERT INTO expenses (user_id, description, amount, category, date, type) VALUES (2, 'Target', 104.30, 'Shopping', '2026-05-03', 'expense');
 INSERT INTO expenses (user_id, description, amount, category, date, type) VALUES (2, 'Gas', 51.75, 'Transportation', '2026-05-04', 'expense');
+
+-- Bills for user1
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (1, 'Rent', 1200.00, '2026-05-01', 'Rent', true, true, 'monthly');
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (1, 'Gym Membership', 49.99, '2026-04-30', 'Health', false, true, 'monthly');
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (1, 'Netflix', 15.99, '2026-05-05', 'Subscriptions', false, true, 'monthly');
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (1, 'Electric Bill', 125.00, '2026-05-10', 'Utilities', false, true, 'monthly');
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (1, 'Internet', 79.99, '2026-05-12', 'Utilities', false, true, 'monthly');
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (1, 'Spotify', 9.99, '2026-05-15', 'Subscriptions', false, true, 'monthly');
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (1, 'Car Insurance', 89.00, '2026-05-20', 'Insurance', false, true, 'monthly');
+
+-- Bills for user2
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (2, 'Rent', 1500.00, '2026-05-01', 'Rent', true, true, 'monthly');
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (2, 'Water Bill', 72.50, '2026-05-03', 'Utilities', true, true, 'monthly');
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (2, 'Netflix', 15.99, '2026-05-06', 'Subscriptions', false, true, 'monthly');
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (2, 'Gym Membership', 50.00, '2026-04-28', 'Health', false, true, 'monthly');
+INSERT INTO bills (user_id, name, amount, due_date, category, paid, recurring, frequency) VALUES (2, 'Electric Bill', 138.00, '2026-05-14', 'Utilities', false, true, 'monthly');
