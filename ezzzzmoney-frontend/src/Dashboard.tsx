@@ -77,6 +77,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   // Budget state
   const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>(DEFAULT_BUDGET_CATEGORIES);
+  useEffect(() => {
+  if (transactions.length === 0) return;
+  setBudgetCategories(prev =>
+    prev.map(cat => ({
+      ...cat,
+      spent: transactions
+        .filter(t => t.type === 'expense' && t.category === cat.name)
+        .reduce((sum, t) => Math.round((sum + t.amount) * 100) / 100, 0),
+    }))
+  );
+}, [transactions]);
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
   const [editLimitValue, setEditLimitValue] = useState<string>('');
   const [showAddBudget, setShowAddBudget] = useState(false);
