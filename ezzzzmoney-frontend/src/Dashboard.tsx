@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './Dashboard.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { expenseService } from './Api';
@@ -35,17 +35,36 @@ const DEFAULT_BUDGET_CATEGORIES: BudgetCategory[] = [
   { name: 'Utilities', spent: 110, limit: 150, color: '#34d399' },
 ];
 
+interface AlertItem {
+  id: string;
+  severity: 'critical' | 'warning' | 'info';
+  message: string;
+  timestamp: string;
+}
+
 interface DashboardProps {
   onLogout: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'records'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'records' | 'alerts'>('overview');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('All');
   const [loading, setLoading] = useState(true);
   const [newEntry, setNewEntry] = useState({ description: '', amount: '', category: '', type: 'expense' as 'income' | 'expense' });
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+  const [alertSettings, setAlertSettings] = useState({
+    budgetWarnings: true,
+    budgetWarningPct: 80,
+    largeTransactionAlerts: true,
+    largeTransactionAmount: 500,
+    lowBalanceAlerts: true,
+  });
+  const [thresholdDraft, setThresholdDraft] = useState({
+    budgetWarningPct: '80',
+    largeTransactionAmount: '500',
+  });
 
   // Budget state
   const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>(DEFAULT_BUDGET_CATEGORIES);
@@ -124,6 +143,83 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     if (pct >= 1) return '#f87171';
     if (pct >= 0.8) return '#fbbf24';
     return '#34d399';
+  };
+
+  const formatRelativeTime = (dateStr: string): string => {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffHours < 1) return 'Just now';
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return '1d ago';
+    return `${diffDays}d ago`;
+  };
+
+  const alerts = useMemo<AlertItem[]>(() => {
+    const generated: AlertItem[] = [];
+
+    if (alertSettings.budgetWarnings) {
+      BUDGET_CATEGORIES.forEach(cat => {
+        const pct = (cat.spent / cat.limit) * 100;
+        if (pct >= 100) {
+          generated.push({
+            id: `budget-exceeded-${cat.name}`,
+            severity: 'critical',
+            message: `${cat.name} budget exceeded by $${(cat.spent - cat.limit).toFixed(0)}`,
+            timestamp: 'Now',
+          });
+        } else if (pct >= alertSettings.budgetWarningPct) {
+          generated.push({
+            id: `budget-warning-${cat.name}`,
+            severity: 'warning',
+            message: `${cat.name} at ${Math.round(pct)}% — approaching limit`,
+            timestamp: 'Now',
+          });
+        }
+      });
+    }
+
+    if (alertSettings.largeTransactionAlerts && alertSettings.largeTransactionAmount > 0) {
+      transactions
+        .filter(t => t.type === 'expense' && t.amount >= alertSettings.largeTransactionAmount)
+        .forEach(t => {
+          generated.push({
+            id: `large-txn-${t.id}`,
+            severity: 'warning',
+            message: `Large expense: ${t.description} — $${t.amount.toFixed(0)}`,
+            timestamp: formatRelativeTime(t.date),
+          });
+        });
+    }
+
+    if (alertSettings.lowBalanceAlerts && totalExpenses > totalIncome && totalIncome > 0) {
+      generated.push({
+        id: 'low-balance',
+        severity: 'warning',
+        message: `Expenses exceed income by $${(totalExpenses - totalIncome).toFixed(0)} this month`,
+        timestamp: 'Now',
+      });
+    }
+
+    transactions
+      .filter(t => t.type === 'income')
+      .slice(0, 3)
+      .forEach(t => {
+        generated.push({
+          id: `income-${t.id}`,
+          severity: 'info',
+          message: `${t.description} — $${t.amount.toFixed(0)} received`,
+          timestamp: formatRelativeTime(t.date),
+        });
+      });
+
+    return generated.filter(a => !dismissedAlerts.has(a.id));
+  }, [transactions, alertSettings, dismissedAlerts, totalIncome, totalExpenses]);
+
+  const newAlertCount = alerts.filter(a => a.severity !== 'info').length;
+
+  const dismissAlert = (id: string) => {
+    setDismissedAlerts(prev => new Set(prev).add(id));
   };
 
   const handleAddEntry = async (e: React.FormEvent) => {
@@ -210,9 +306,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           <button className={`dash-nav-item ${activeTab === 'records' ? 'active' : ''}`} onClick={() => setActiveTab('records')}>
             <span className="dash-nav-icon">📋</span> Records
           </button>
-          <button className="dash-nav-item placeholder"><span className="dash-nav-icon">📅</span> Bills</button>
-          <button className="dash-nav-item placeholder"><span className="dash-nav-icon">📈</span> Investments</button>
-          <button className="dash-nav-item placeholder"><span className="dash-nav-icon">🔔</span> Alerts</button>
+          <button className="dash-nav-item placeholder">
+            <span className="dash-nav-icon">📅</span> Bills
+          </button>
+          <button className="dash-nav-item placeholder">
+            <span className="dash-nav-icon">📈</span> Investments
+          </button>
+          <button
+            className={`dash-nav-item ${activeTab === 'alerts' ? 'active' : ''}`}
+            onClick={() => setActiveTab('alerts')}
+          >
+            <span className="dash-nav-icon">🔔</span> Alerts
+            {newAlertCount > 0 && <span className="dash-nav-badge">{newAlertCount}</span>}
+          </button>
         </nav>
         <button className="dash-logout" onClick={onLogout}>Sign Out</button>
       </aside>
@@ -454,6 +560,135 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </button>
                   </div>
                 ))}
+              </div>
+            </div>
+          </>
+        )}
+        {activeTab === 'alerts' && (
+          <>
+            <div className="dash-header">
+              <h2 className="dash-title">Alerts 🔔</h2>
+              <p className="dash-subtitle">
+                {newAlertCount > 0 ? `${newAlertCount} new alert${newAlertCount > 1 ? 's' : ''}` : 'All caught up'}
+              </p>
+            </div>
+
+            <div className="alerts-layout">
+              <div className="dash-card alerts-feed-card">
+                {alerts.length === 0 ? (
+                  <div className="alerts-empty">
+                    <span className="alerts-empty-icon">✅</span>
+                    <p>No active alerts</p>
+                    <span className="alerts-empty-sub">Your finances are looking good!</span>
+                  </div>
+                ) : (
+                  <div className="alerts-feed">
+                    {alerts.map(alert => (
+                      <div key={alert.id} className={`alert-item alert-${alert.severity}`}>
+                        <span className={`alert-dot dot-${alert.severity}`} />
+                        <div className="alert-content">
+                          <span className="alert-message">{alert.message}</span>
+                          <span className="alert-time">{alert.timestamp}</span>
+                        </div>
+                        <button
+                          className="alert-dismiss"
+                          onClick={() => dismissAlert(alert.id)}
+                          title="Dismiss"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="dash-card alerts-settings-card">
+                <h3 className="dash-card-title">Alert Thresholds</h3>
+                <div className="alerts-settings-list">
+
+                  {/* Budget warnings */}
+                  <div className="alert-setting-row">
+                    <div className="alert-setting-info">
+                      <span className="alert-setting-label">Budget warnings</span>
+                      {alertSettings.budgetWarnings && (
+                        <span className="alert-setting-sub">
+                          Warn at&nbsp;
+                          <input
+                            className="alert-threshold-input"
+                            type="number"
+                            min={1}
+                            max={99}
+                            value={thresholdDraft.budgetWarningPct}
+                            onChange={e => setThresholdDraft(d => ({ ...d, budgetWarningPct: e.target.value }))}
+                            onBlur={() => {
+                              const v = Math.min(99, Math.max(1, parseInt(thresholdDraft.budgetWarningPct) || 80));
+                              setThresholdDraft(d => ({ ...d, budgetWarningPct: String(v) }));
+                              setAlertSettings(s => ({ ...s, budgetWarningPct: v }));
+                            }}
+                          />
+                          % of limit
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      className={`alert-toggle ${alertSettings.budgetWarnings ? 'on' : 'off'}`}
+                      onClick={() => setAlertSettings(s => ({ ...s, budgetWarnings: !s.budgetWarnings }))}
+                      aria-pressed={alertSettings.budgetWarnings}
+                    >
+                      <span className="alert-toggle-thumb" />
+                    </button>
+                  </div>
+
+                  {/* Large transaction */}
+                  <div className="alert-setting-row">
+                    <div className="alert-setting-info">
+                      <span className="alert-setting-label">Large transaction alerts</span>
+                      {alertSettings.largeTransactionAlerts && (
+                        <span className="alert-setting-sub">
+                          Alert for expenses over&nbsp;$
+                          <input
+                            className="alert-threshold-input alert-threshold-wide"
+                            type="number"
+                            min={1}
+                            value={thresholdDraft.largeTransactionAmount}
+                            onChange={e => setThresholdDraft(d => ({ ...d, largeTransactionAmount: e.target.value }))}
+                            onBlur={() => {
+                              const v = Math.max(1, parseInt(thresholdDraft.largeTransactionAmount) || 500);
+                              setThresholdDraft(d => ({ ...d, largeTransactionAmount: String(v) }));
+                              setAlertSettings(s => ({ ...s, largeTransactionAmount: v }));
+                            }}
+                          />
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      className={`alert-toggle ${alertSettings.largeTransactionAlerts ? 'on' : 'off'}`}
+                      onClick={() => setAlertSettings(s => ({ ...s, largeTransactionAlerts: !s.largeTransactionAlerts }))}
+                      aria-pressed={alertSettings.largeTransactionAlerts}
+                    >
+                      <span className="alert-toggle-thumb" />
+                    </button>
+                  </div>
+
+                  {/* Low balance */}
+                  <div className="alert-setting-row">
+                    <div className="alert-setting-info">
+                      <span className="alert-setting-label">Low balance alerts</span>
+                      {alertSettings.lowBalanceAlerts && (
+                        <span className="alert-setting-sub">Fires when expenses exceed income</span>
+                      )}
+                    </div>
+                    <button
+                      className={`alert-toggle ${alertSettings.lowBalanceAlerts ? 'on' : 'off'}`}
+                      onClick={() => setAlertSettings(s => ({ ...s, lowBalanceAlerts: !s.lowBalanceAlerts }))}
+                      aria-pressed={alertSettings.lowBalanceAlerts}
+                    >
+                      <span className="alert-toggle-thumb" />
+                    </button>
+                  </div>
+
+                </div>
               </div>
             </div>
           </>

@@ -479,6 +479,230 @@
   color: #f87171;
 }
 
+/* Nav badge */
+.dash-nav-badge {
+  margin-left: auto;
+  background: #f87171;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 1px 7px;
+  font-family: 'Syne', sans-serif;
+}
+
+/* Alerts tab layout */
+.alerts-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.alerts-feed-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Alert feed */
+.alerts-feed {
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+
+.alert-item:last-child {
+  border-bottom: none;
+}
+
+.alert-item:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.alert-item.alert-critical {
+  background: rgba(248, 113, 113, 0.04);
+}
+
+.alert-item.alert-warning {
+  background: rgba(251, 191, 36, 0.04);
+}
+
+/* Severity dot */
+.alert-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-critical { background: #f87171; box-shadow: 0 0 6px rgba(248,113,113,0.5); }
+.dot-warning  { background: #fbbf24; box-shadow: 0 0 6px rgba(251,191,36,0.5); }
+.dot-info     { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.4); }
+
+/* Alert content */
+.alert-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.alert-message {
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+.alert-time {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Dismiss button */
+.alert-dismiss {
+  background: none;
+  border: none;
+  color: #374151;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.alert-dismiss:hover {
+  color: #9ca3af;
+  background: rgba(255,255,255,0.06);
+}
+
+/* Empty state */
+.alerts-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px;
+  gap: 8px;
+}
+
+.alerts-empty-icon {
+  font-size: 36px;
+  margin-bottom: 4px;
+}
+
+.alerts-empty p {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #d1d5db;
+  margin: 0;
+}
+
+.alerts-empty-sub {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Alert settings card */
+.alerts-settings-card {
+  padding: 24px;
+}
+
+.alerts-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.alert-setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.alert-setting-row:last-child {
+  border-bottom: none;
+}
+
+.alert-setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-setting-label {
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.alert-setting-sub {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.alert-threshold-input {
+  width: 48px;
+  background: #1f2937;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 2px 6px;
+  color: #f9fafb;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  outline: none;
+  text-align: center;
+}
+
+.alert-threshold-input:focus {
+  border-color: #34d399;
+}
+
+.alert-threshold-wide {
+  width: 68px;
+}
+
+/* Toggle switch */
+.alert-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 99px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.alert-toggle.on  { background: #34d399; }
+.alert-toggle.off { background: #374151; }
+
+.alert-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.2s;
+}
+
+.alert-toggle.on  .alert-toggle-thumb { left: 23px; }
+.alert-toggle.off .alert-toggle-thumb { left: 3px; }
 
 .budget-header {
   display: flex;
