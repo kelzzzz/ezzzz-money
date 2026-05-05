@@ -19,15 +19,6 @@ interface BudgetCategory {
   color: string;
 }
 
-const MOCK_TRANSACTIONS: Transaction[] = [
-  { id: 1, description: 'Paycheck', amount: 2400, category: 'Income', date: 'May 1', type: 'income' },
-  { id: 2, description: 'Grocery Store', amount: 87.5, category: 'Groceries', date: 'May 1', type: 'expense' },
-  { id: 3, description: 'Netflix', amount: 15.99, category: 'Subscriptions', date: 'Apr 30', type: 'expense' },
-  { id: 4, description: 'Restaurant', amount: 42.0, category: 'Dining', date: 'Apr 29', type: 'expense' },
-  { id: 5, description: 'Freelance Payment', amount: 500, category: 'Income', date: 'Apr 28', type: 'income' },
-  { id: 6, description: 'Electric Bill', amount: 110, category: 'Utilities', date: 'Apr 28', type: 'expense' },
-];
-
 const DEFAULT_BUDGET_CATEGORIES: BudgetCategory[] = [
   { name: 'Groceries', spent: 220, limit: 300, color: '#34d399' },
   { name: 'Dining', spent: 180, limit: 200, color: '#fbbf24' },
@@ -221,7 +212,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         {activeTab === 'overview' && (
           <>
             <div className="dash-header">
-              <h2 className="dash-title">Good morning 👋</h2>
+              <h2 className="dash-title">Welcome👋</h2>
               <p className="dash-subtitle">Here's your financial snapshot for May 2026</p>
             </div>
 
@@ -332,7 +323,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   })}
                 </div>
               </div>
-
+              <div className="dash-card chart-card">
+                <h3 className="dash-card-title">Income vs Expenses</h3>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={CHART_DATA} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                    <XAxis dataKey="month" stroke="#6b7280" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                    <YAxis stroke="#6b7280" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                    <Tooltip contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#f9fafb' }} />
+                    <Legend wrapperStyle={{ color: '#9ca3af', fontSize: 13 }} />
+                    <Bar dataKey="income" fill="#34d399" radius={[4, 4, 0, 0]} name="Income" />
+                    <Bar dataKey="expenses" fill="#f87171" radius={[4, 4, 0, 0]} name="Expenses" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
               <div className="dash-card recent-card">
                 <h3 className="dash-card-title">Recent Transactions</h3>
                 <div className="recent-list">
@@ -350,20 +354,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </div>
               </div>
 
-              <div className="dash-card chart-card">
-                <h3 className="dash-card-title">Income vs Expenses</h3>
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={CHART_DATA} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                    <XAxis dataKey="month" stroke="#6b7280" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                    <YAxis stroke="#6b7280" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#f9fafb' }} />
-                    <Legend wrapperStyle={{ color: '#9ca3af', fontSize: 13 }} />
-                    <Bar dataKey="income" fill="#34d399" radius={[4, 4, 0, 0]} name="Income" />
-                    <Bar dataKey="expenses" fill="#f87171" radius={[4, 4, 0, 0]} name="Expenses" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
             </div>
           </>
         )}
