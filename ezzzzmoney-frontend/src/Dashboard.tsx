@@ -42,7 +42,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('All');
-  const [loading, setLoading] = useState(true);
+
   const [newEntry, setNewEntry] = useState({ description: '', amount: '', category: '', type: 'expense' as 'income' | 'expense' });
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [alertSettings, setAlertSettings] = useState({
@@ -65,15 +65,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [newBudget, setNewBudget] = useState({ name: '', limit: '' });
   const userId = localStorage.getItem('userId');
 
-  useEffect(() => {
-    if (userId) {
-      fetchExpenses();
-    }
-  }, [userId]);
-
   const fetchExpenses = async () => {
     try {
-      setLoading(true);
       const response = await expenseService.getExpensesByUser(parseInt(userId!));
       const expenses = response.data.map((exp: any) => ({
         id: exp.id,
@@ -86,10 +79,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       setTransactions(expenses.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     } catch (error) {
       console.error('Error fetching expenses:', error);
-    } finally {
-      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (userId) {
+      fetchExpenses();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const healthScore = 72;
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -205,7 +203,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       });
 
     return generated.filter(a => !dismissedAlerts.has(a.id));
-  }, [transactions, alertSettings, dismissedAlerts, totalIncome, totalExpenses]);
+  }, [transactions, alertSettings, dismissedAlerts, totalIncome, totalExpenses, budgetCategories]);
 
   const newAlertCount = alerts.filter(a => a.severity !== 'info').length;
 
