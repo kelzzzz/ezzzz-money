@@ -159,7 +159,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const generated: AlertItem[] = [];
 
     if (alertSettings.budgetWarnings) {
-      BUDGET_CATEGORIES.forEach(cat => {
+      budgetCategories.forEach(cat => {
         const pct = (cat.spent / cat.limit) * 100;
         if (pct >= 100) {
           generated.push({
@@ -214,7 +214,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       });
 
     return generated.filter(a => !dismissedAlerts.has(a.id));
-  }, [transactions, alertSettings, dismissedAlerts, totalIncome, totalExpenses]);
+  }, [transactions, alertSettings, dismissedAlerts, totalIncome, totalExpenses, budgetCategories]);
 
   const newAlertCount = alerts.filter(a => a.severity !== 'info').length;
 
