@@ -19,6 +19,7 @@ echo -e "\033[32m🚀 Starting Spring Boot backend...\033[0m"
 cd "$BACKEND_DIR" || { echo "❌ Backend directory not found!"; exit 1; }
 
 if [ -f ./mvnw ]; then
+    chmod +x ./mvnw
     ./mvnw spring-boot:run &
 else
     mvn spring-boot:run &
