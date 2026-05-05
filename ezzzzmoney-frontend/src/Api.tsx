@@ -31,4 +31,18 @@ export const expenseService = {
     api.delete(`/api/expenses/${expenseId}`),
 };
 
+export const billService = {
+  getBillsByUser: (userId: number) =>
+    api.get(`/api/bills/user/${userId}`),
+
+  createBill: (userId: number, bill: any) =>
+    api.post(`/api/bills/user/${userId}`, bill),
+
+  updateBill: (billId: number, bill: any) =>
+    api.put(`/api/bills/${billId}`, bill),
+
+  deleteBill: (billId: number) =>
+    api.delete(`/api/bills/${billId}`),
+};
+
 export default api;
