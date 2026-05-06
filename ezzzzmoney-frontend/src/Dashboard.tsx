@@ -20,10 +20,10 @@ interface BudgetCategory {
 }
 
 const DEFAULT_BUDGET_CATEGORIES: BudgetCategory[] = [
-  { name: 'Groceries', spent: 220, limit: 300, color: '#34d399' },
-  { name: 'Dining', spent: 180, limit: 200, color: '#fbbf24' },
-  { name: 'Shopping', spent: 310, limit: 250, color: '#f87171' },
-  { name: 'Utilities', spent: 110, limit: 150, color: '#34d399' },
+  { name: 'Groceries', spent: 220, limit: 600, color: '#34d399' },
+  { name: 'Dining', spent: 180, limit: 500, color: '#fbbf24' },
+  { name: 'Shopping', spent: 310, limit: 1000, color: '#f87171' },
+  { name: 'Utilities', spent: 110, limit: 450, color: '#34d399' },
 ];
 
 interface Bill {
